@@ -12,10 +12,9 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
 import org.apache.nifi.processor.io.OutputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
-import org.springframework.util.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,22 +25,26 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author 曹莉
  */
 @SideEffectFree
-@Tags({"JSON", "NIFI ROCKS"})
+@Tags({"JSON", "NIFI ROCKS","POEM"})
 @CapabilityDescription("Fetch value from json path")
 public class JsonProcessor extends AbstractProcessor {
+
+    private static final Logger logger = LoggerFactory.getLogger(JsonProcessor.class);
+
 
     private List<PropertyDescriptor> propertyDescriptors;
 
     private Set<Relationship> relationships;
 
+    public static final String MATCH_ATTR = "match";
 
-    private static final PropertyDescriptor JSON_PATH = new PropertyDescriptor.Builder()
+    public static final PropertyDescriptor JSON_PATH = new PropertyDescriptor.Builder()
             .name("JSON PATH")
             .required(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
-    private static final Relationship SUCCESS = new Relationship.Builder()
+    public static final Relationship SUCCESS = new Relationship.Builder()
             .name("SUCCESS")
             .description("success relationship")
             .build();
@@ -60,6 +63,7 @@ public class JsonProcessor extends AbstractProcessor {
         Set<Relationship> relationships = new HashSet<>();
         relationships.add(SUCCESS);
         this.relationships = Collections.unmodifiableSet(relationships);
+        logger.info("init json processor");
     }
 
     @Override
@@ -83,7 +87,9 @@ public class JsonProcessor extends AbstractProcessor {
             public void process(InputStream in) throws IOException {
                 try {
                     String json = IOUtils.toString(in);
+                    logger.info("read json :" + json);
                     String result = JsonPath.read(json, "$.hello");
+                    logger.info("get json :" + result);
                     value.set(result);
                 } catch (Exception ex) {
                     ex.printStackTrace();
